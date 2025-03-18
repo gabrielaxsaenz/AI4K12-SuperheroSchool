@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adventure Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Superhero School</h1>
+        <p id="scenario-text">Loading scenario...</p>
+        <form id="choice-form">
+            <label><input type="radio" name="choice" value="1"> Option 1</label><br>
+            <label><input type="radio" name="choice" value="2"> Option 2</label><br>
+            <label><input type="radio" name="choice" value="3"> Option 3</label><br>
+            <label><input type="radio" name="choice" value="4"> Option 4</label><br>
+            <textarea name="reason" placeholder="Why did you choose this?" required></textarea><br>
+            <button type="submit">Submit</button>
+        </form>
+        <p id="prediction-result"></p>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            fetch("/scenario")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("scenario-text").innerText = data.scenario;
+                });
+
+            document.getElementById("choice-form").addEventListener("submit", function(event) {
+                event.preventDefault();
+                let formData = new FormData(this);
+
+                fetch("/submit", {
+                    method: "POST",
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.next_scenario) {
+                        document.getElementById("scenario-text").innerText = data.next_scenario;
+                    } else if (data.final_scenario) {
+                        document.getElementById("scenario-text").innerText = data.final_scenario;
+                        document.getElementById("prediction-result").innerText = 
+                            "Predicted Choice: " + data.prediction + "\nReason: " + data.reason;
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
