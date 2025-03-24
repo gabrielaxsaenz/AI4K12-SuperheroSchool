@@ -7,37 +7,157 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 20px;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: repeating-linear-gradient(
+                45deg,
+                #87ceeb,
+                #87ceeb 40px,
+                #add8e6 40px,
+                #add8e6 80px
+            );
+            background-size: 200% 100%;
+            animation: panBackground 20s linear infinite;
         }
+
+        @keyframes panBackground {
+            from { background-position: 0 0; }
+            to { background-position: -100% 0; }
+        }
+
         .container {
-            max-width: 600px;
-            margin: auto;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: row;
+            max-width: 90%;
+            width: 1600px;
+            height: 800px;
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
         }
-        button {
+
+        .left-panel, .right-panel {
+            padding: 30px;
+        }
+
+        .left-panel {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border-right: 1px solid #ddd;
+        }
+
+        .right-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        img.placeholder {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        #scenario-text {
+            font-size: 1.2em;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .option-box {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            background-color: #fafafa;
+        }
+
+        .option-box:hover {
+            background-color: #e0f7fa;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        textarea {
+            width: 100%;
+            height: 100px;
             margin-top: 10px;
+            padding: 10px;
+            font-size: 1em;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            margin-top: 15px;
             padding: 10px 20px;
             font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #prediction-result {
+            margin-top: 20px;
+            font-weight: bold;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Superhero School</h1>
-        <p id="scenario-text">Loading scenario...</p>
-        <form id="choice-form">
-            <label><input type="radio" name="choice" value="1"> Option 1</label><br>
-            <label><input type="radio" name="choice" value="2"> Option 2</label><br>
-            <label><input type="radio" name="choice" value="3"> Option 3</label><br>
-            <label><input type="radio" name="choice" value="4"> Option 4</label><br>
-            <textarea name="reason" placeholder="Why did you choose this?" required></textarea><br>
-            <button type="submit">Submit</button>
-        </form>
-        <p id="prediction-result"></p>
+        <div class="left-panel">
+            <div>
+                <h1>Superhero School</h1>
+                <p id="scenario-text">Loading scenario...</p>
+                <form id="choice-form">
+                    <div class="option-box">
+                        <label><input type="radio" name="choice" value="1"> Option 1</label>
+                    </div>
+                    <div class="option-box">
+                        <label><input type="radio" name="choice" value="2"> Option 2</label>
+                    </div>
+                    <div class="option-box">
+                        <label><input type="radio" name="choice" value="3"> Option 3</label>
+                    </div>
+                    <div class="option-box">
+                        <label><input type="radio" name="choice" value="4"> Option 4</label>
+                    </div>
+                    <div id="reason-box" class="hidden">
+                        <textarea name="reason" placeholder="Why did you choose this?" required></textarea><br>
+                        <button type="submit">Submit</button>
+                    </div>
+                </form>
+                <p id="prediction-result"></p>
+            </div>
+        </div>
+        <div class="right-panel">
+            <img class="placeholder" src="static/images/testimage.png" alt="Superhero School">
+        </div>
     </div>
 
     <script>
@@ -48,9 +168,18 @@
                     document.getElementById("scenario-text").innerText = data.scenario;
                 });
 
-            document.getElementById("choice-form").addEventListener("submit", function(event) {
+            const form = document.getElementById("choice-form");
+            const reasonBox = document.getElementById("reason-box");
+
+            form.addEventListener("change", function(event) {
+                if (event.target.name === "choice") {
+                    reasonBox.classList.remove("hidden");
+                }
+            });
+
+            form.addEventListener("submit", function(event) {
                 event.preventDefault();
-                let formData = new FormData(this);
+                let formData = new FormData(form);
 
                 fetch("/submit", {
                     method: "POST",
@@ -60,9 +189,11 @@
                 .then(data => {
                     if (data.next_scenario) {
                         document.getElementById("scenario-text").innerText = data.next_scenario;
+                        reasonBox.classList.add("hidden");
+                        form.reset();
                     } else if (data.final_scenario) {
                         document.getElementById("scenario-text").innerText = data.final_scenario;
-                        document.getElementById("prediction-result").innerText = 
+                        document.getElementById("prediction-result").innerText =
                             "Predicted Choice: " + data.prediction + "\nReason: " + data.reason;
                     }
                 });
